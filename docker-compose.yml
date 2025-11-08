@@ -1,3 +1,4 @@
+version: '3.9'
 services:
   sqlserver:
     image: mcr.microsoft.com/azure-sql-edge:1.0.7
@@ -27,13 +28,9 @@ services:
       - '10000:10000'
 
   servicebus:
-    image: rabbitmq:3-management
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+    image: ghcr.io/azure/azure-service-bus/emulator:latest
     ports:
       - '5672:5672'
-      - '15672:15672'
 
   ml-service:
     build:

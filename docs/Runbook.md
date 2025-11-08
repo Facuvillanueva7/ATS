@@ -1,7 +1,7 @@
 # Dev Runbook
 
 ## Local stack
-1. Start databases and services (RabbitMQ is included as the Service Bus-compatible broker):
+1. Start databases and services:
    ```bash
    docker compose up
    ```
