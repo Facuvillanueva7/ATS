@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from src.config import DEFAULT_NEW_STAGE, DEFAULT_POOL_STAGE, KANBAN_COLUMNS
-from src.storage.json_store import add_candidate, load_candidates, seed_candidates, update_candidate_stage
+from src.storage.json_store import add_candidate, load_candidates, update_candidate_stage
 
 
 def _filter_candidates(candidates: list[dict]) -> list[dict]:
@@ -52,6 +52,7 @@ def _candidate_card(candidate: dict):
         st.markdown(f"**Hard skills:** {skills_hard if skills_hard else '-'}")
         st.markdown(f"**Soft skills:** {skills_soft if skills_soft else '-'}")
         st.write(f"⏱️ Days in process: {candidate.get('days_in_process', 0)}")
+        st.write(f"📅 Application: {candidate.get('application_date', 'N/A')}")
 
         new_stage = st.selectbox(
             "Move to",
@@ -60,7 +61,7 @@ def _candidate_card(candidate: dict):
             index=KANBAN_COLUMNS.index(candidate.get("kanban_stage", DEFAULT_NEW_STAGE)),
         )
         if st.button("Move", key=f"move_btn_{candidate['id']}") and new_stage != candidate.get("kanban_stage"):
-            update_candidate_stage(str(candidate["id"]), new_stage, actor="system")
+            update_candidate_stage(candidate["id"], new_stage, actor="system")
             st.success(f"Moved {candidate['name']} to {new_stage}")
             st.rerun()
 
@@ -72,9 +73,6 @@ def render_kanban() -> None:
     candidates = load_candidates()
     if not candidates:
         st.warning("No real candidates found.")
-        if st.button("Seed demo data", type="primary"):
-            seed_candidates(20)
-            st.rerun()
         return
 
     top1, top2 = st.columns([1, 1])
@@ -94,8 +92,8 @@ def render_kanban() -> None:
                 email = st.text_input("Email")
                 role = st.text_input("Role")
                 recruiter = st.text_input("Recruiter")
-                english_level = st.selectbox("English", ["Pre-intermediate", "Intermediate", "Upper-intermediate", "Advanced"])
-                salary = st.number_input("Salary expectation", min_value=0, value=2500)
+                english_level = st.selectbox("English", ["A2", "B1", "B2", "C1", "C2"])
+                salary = st.number_input("Salary expectation", min_value=0, value=25000)
                 hard = st.text_input("Hard skills (comma-separated)")
                 soft = st.text_input("Soft skills (comma-separated)")
                 stage = st.selectbox("Initial stage", [DEFAULT_NEW_STAGE, DEFAULT_POOL_STAGE])
@@ -124,9 +122,6 @@ def render_kanban() -> None:
                         st.rerun()
 
     filtered = _filter_candidates(candidates)
-    if not filtered:
-        st.info("No candidates match current filters.")
-
     st.markdown("<style>.stApp { background-color: #0e1117; color: #fafafa; }</style>", unsafe_allow_html=True)
 
     columns = st.columns(len(KANBAN_COLUMNS))

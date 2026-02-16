@@ -1,7 +1,6 @@
 # ATS Dashboard POC (Streamlit + Python)
 
-POC **mostrable y funcional** de dashboard ATS hecho 100% en Python con Streamlit.
-Ahora incluye una vista **Kanban** para candidatos "reales" persistidos en archivos JSON locales (sin DB).
+POC **mostrable y funcional** de dashboard ATS hecho 100% en Python con Streamlit, data mock realista y motor de reglas administrable desde UI.
 
 ## Quickstart
 
@@ -10,76 +9,77 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Páginas
-- Home / Dashboard
-- Candidates
-- Rules Admin
-- **Kanban**
+Abre el navegador en `http://localhost:8501`.
 
-## Kanban (POC v1)
-- Columnas configurables desde `src/config.py` (`KANBAN_COLUMNS`):
-  - New
-  - Tests - validations
-  - HR Interview
-  - Tech Interview
-  - Hired
-  - Rejected
-  - Talent pool
-- Cards con datos clave: name, role, recruiter, salary, english, hard/soft skills, days in process, application date.
-- Filtros: search (name/email), recruiter, role, english_level.
-- Movimiento de cards con fallback POC (`Move to` + `Move`).
-- Add candidate desde UI (alta simple a New o Talent pool).
-- Export CSV de candidatos reales.
+## Funcionalidades incluidas
 
-## Persistencia JSON (gratis y liviana)
-Archivos creados automáticamente en `/data` (ruta absoluta calculada desde la raíz del repo, compatible con Codespaces):
-- `data/real_candidates.json`
-- `data/real_activities.json`
-- `data/rules.json`
-- `data/alerts.json`
-- `data/rule_runs.json`
+### 1) Home / Dashboard
+- KPIs: total candidates, new, in_progress, rejected, hired.
+- Average time-to-hire.
+- Funnel por etapa.
+- Promedio de días por etapa.
+- Incidencias por tipo.
+- Tendencia semanal (creados/hired/rejected).
 
-Si no existen, están vacíos o el JSON es inválido, se autoseedean:
-- 20 candidatos realistas para Kanban.
-- actividades vacías.
-- reglas base para Rules Admin.
+### 2) Candidates
+- Tabla con filtros por búsqueda, status, etapa, recruiter, skill y salario.
+- Detalle de candidato con header de datos principales + tags de skills.
+- Pipeline timeline con `inDate`, `outDate`, `durationDays`, `notes`, `actor`.
+- Logs/incidences con filtros por tipo y rango de fechas.
+- Export CSV para actividades y pipeline.
 
-Cada movimiento en Kanban:
-- actualiza `kanban_stage` y `updated_at` del candidato.
-- registra una actividad `stage_change` en `real_activities.json`.
-- persiste inmediatamente en disco.
+### 3) Rules Admin
+- CRUD completo de reglas desde UI (crear/editar/activar/desactivar/eliminar).
+- Ejecución manual del engine con botón **Run rules**.
+- Vista de alertas generadas.
+- Auditoría de ejecuciones en `rule_runs`.
+- Persistencia en SQLite (`ats_dashboard.db`) para `rules`, `alerts`, `rule_runs`.
 
-## Data source toggle (Mock / Real)
-En sidebar se puede alternar:
-- **Mock**: usa generador mock (60 candidatos).
-- **Real**: usa `real_candidates.json` y deriva KPIs/charts/tabla.
+## Mock data
+- Generación automática con seed fija (default `42`) y botón de regeneración.
+- Exactamente **60 candidatos**.
+- Distribución de status:
+  - 10 New
+  - 25 In Progress
+  - 15 Rejected
+  - 10 Hired
+- Skills variadas: SQL, SQLServer, .NET, C#, React, Angular, DevOps, ETL, Power BI, etc.
+- Pipeline + actividades realistas por candidato.
+- Incidencias incluidas: `delay`, `rejected_salary`, `missing_references`, `no_show`, `client_feedback`, `background_check`.
 
-Para datos reales sin pipeline explícito, se construye una timeline mínima derivada de `kanban_stage`.
-
-## Estructura
+## Estructura del proyecto
 
 ```text
 app.py
 requirements.txt
-data/
 src/
-  config.py
   charts/
     charts.py
   connectors/
     connector.py
+  db/
+    sqlite.py
   mock/
     generator.py
   models/
     schemas.py
   rules/
     engine.py
-  storage/
-    json_store.py
-  views/
-    kanban.py
 ```
 
-## Integración futura con API/DB
-- Se mantiene `src/connectors/connector.py` como interfaz stub para APIs reales.
-- Si más adelante se requiere SQLite, se puede agregar una capa de storage intercambiable sin romper la UI (actualmente JSON-first).
+## Conectar API real luego
+
+Se deja interfaz stub en `src/connectors/connector.py`:
+- `fetch_candidates_from_api()`
+- `fetch_pipeline_events_from_api()`
+- `push_rule_to_api(rule_payload)`
+
+Para migrar de mock a real:
+1. Implementar llamadas reales en `connector.py`.
+2. Mapear payload externo a los modelos Pydantic de `src/models/schemas.py`.
+3. Reemplazar el loader de `app.py` para priorizar conector real y fallback a mock.
+4. Mantener Rules Admin sobre SQLite o sincronizar reglas a backend vía `push_rule_to_api`.
+
+## Notas
+- No depende de APIs externas para funcionar.
+- Todo es Python puro (sin frameworks JS).
