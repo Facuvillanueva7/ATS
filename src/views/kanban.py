@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from src.config import DEFAULT_NEW_STAGE, DEFAULT_POOL_STAGE, KANBAN_COLUMNS
-from src.storage.json_store import add_candidate, load_candidates, seed_if_missing, update_candidate_stage
+from src.storage.json_store import add_candidate, load_candidates, update_candidate_stage
 
 
 def _filter_candidates(candidates: list[dict]) -> list[dict]:
@@ -70,7 +70,6 @@ def render_kanban() -> None:
     st.header("Kanban")
     st.caption("Dark board, cards con chips y persistencia JSON en /data")
 
-    seed_if_missing()
     candidates = load_candidates()
     if not candidates:
         st.warning("No real candidates found.")
@@ -123,9 +122,6 @@ def render_kanban() -> None:
                         st.rerun()
 
     filtered = _filter_candidates(candidates)
-    if not filtered:
-        st.info("No candidates match current filters.")
-
     st.markdown("<style>.stApp { background-color: #0e1117; color: #fafafa; }</style>", unsafe_allow_html=True)
 
     columns = st.columns(len(KANBAN_COLUMNS))
